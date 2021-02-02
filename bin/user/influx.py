@@ -302,6 +302,7 @@ class Influx(weewx.restx.StdRESTbase):
         site_dict.setdefault('dbadmin_username', None)
         site_dict.setdefault('dbadmin_password', '')
         site_dict.setdefault('create_database', True)
+        loginf("create database is %s" % site_dict['create_database'])
         site_dict.setdefault('tags', None)
         site_dict.setdefault('line_format', 'single-line')
         site_dict.setdefault('obs_to_upload', 'most')
@@ -416,6 +417,7 @@ class InfluxThread(weewx.restx.RESTThread):
         self.line_format = line_format
 
         if create_database:
+            loginf("__init__: create database - %s" % create_database)
             uname = None
             pword = None
             if dbadmin_username:
@@ -427,6 +429,7 @@ class InfluxThread(weewx.restx.RESTThread):
             self.create_database(uname, pword)
 
     def create_database(self, username, password):
+        logdbg(">>> entering create_database method called by: %s" % sys._getframe(1).f_code.co_name)
         # ensure that the database exists
         qstr = urlencode({'q': 'CREATE DATABASE %s' % self.database})
         url = '%s/query?%s' % (self.server_url, qstr)
@@ -463,10 +466,12 @@ class InfluxThread(weewx.restx.RESTThread):
         request = super(InfluxThread, self).get_request(url)
 
         if self.username and self.password:
-            # Create a base64 byte string with the authorization info
-            base64string = base64.b64encode(('%s:%s' % (self.username, self.password)).encode())
-            # Add the authentication header to the request:
-            request.add_header("Authorization", b"Basic %s" % base64string)
+#            # Create a base64 byte string with the authorization info
+#            base64string = base64.b64encode(('%s:%s' % (self.username, self.password)).encode())
+#            # Add the authentication header to the request:
+#            request.add_header("Authorization", b"Basic %s" % base64string)
+#            request.add_header("Authorization", "Basic %s:%s" % (self.username, self.password))
+            request.add_header("Authorization", "Token %s" % self.password)
         return request
 
     def check_response(self, response):
